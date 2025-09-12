@@ -1,0 +1,406 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'AI-Driven AutoScaling Agent Demo - Complete AWS Infrastructure'
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access
+    ConstraintDescription: Must be the name of an existing EC2 KeyPair
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where resources will be created
+    ConstraintDescription: Must be a valid VPC ID
+  
+  PublicSubnets:
+    Type: CommaDelimitedList
+    Description: Comma-separated list of public subnet IDs (at least 2 for ALB)
+    ConstraintDescription: Must be valid subnet IDs in different AZs
+  
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: AMI ID for EC2 instances
+    Default: ami-0c02fb55956c7d316  # Amazon Linux 2 AMI (HVM), SSD Volume Type
+  
+  InstanceType:
+    Type: String
+    Description: EC2 instance type
+    Default: t3.micro
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t2.micro
+      - t2.small
+
+Conditions:
+  HasMultipleSubnets: !Not [!Equals [!Select [1, !Ref PublicSubnets], !Select [0, !Ref PublicSubnets]]]
+
+Resources:
+  # Security Group for ALB
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Application Load Balancer
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-alb-sg'
+
+  # Security Group for EC2 instances
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EC2 instances
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-instance-sg'
+
+  # IAM Role for EC2 instances
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      Policies:
+        - PolicyName: AutoScalingAgentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:ListMetrics
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:SetDesiredCapacity
+                  - autoscaling:UpdateAutoScalingGroup
+                Resource: '*'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-ec2-role'
+
+  # Instance Profile for EC2
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref EC2Role
+
+  # Application Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub '${AWS::StackName}-alb'
+      Scheme: internet-facing
+      Type: application
+      Subnets: !Ref PublicSubnets
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-alb'
+
+  # Target Group
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub '${AWS::StackName}-tg'
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+      TargetType: instance
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-tg'
+
+  # ALB Listener
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  # Launch Template
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub '${AWS::StackName}-lt'
+      LaunchTemplateData:
+        ImageId: !Ref ImageId
+        InstanceType: !Ref InstanceType
+        KeyName: !Ref KeyName
+        SecurityGroupIds:
+          - !Ref InstanceSecurityGroup
+        IamInstanceProfile:
+          Arn: !GetAtt EC2InstanceProfile.Arn
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            yum update -y
+            yum install -y python3 python3-pip
+            pip3 install boto3
+            
+            # Create agent.py script
+            cat > /home/ec2-user/agent.py << 'EOF'
+            #!/usr/bin/env python3
+            import boto3
+            import time
+            import logging
+            from datetime import datetime, timedelta
+            
+            # Configure logging
+            logging.basicConfig(
+                level=logging.INFO,
+                format='%(asctime)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler('/home/ec2-user/agent.log'),
+                    logging.StreamHandler()
+                ]
+            )
+            logger = logging.getLogger(__name__)
+            
+            class AutoScalingAgent:
+                def __init__(self):
+                    self.cloudwatch = boto3.client('cloudwatch')
+                    self.autoscaling = boto3.client('autoscaling')
+                    self.asg_name = '${AWS::StackName}-asg'
+                    self.target_group_arn = '${TargetGroup}'
+                    self.min_capacity = 1
+                    self.max_capacity = 4
+                    self.scale_up_threshold = 120  # requests per minute
+                    self.scale_down_threshold = 60  # requests per minute
+                    
+                def get_request_count(self):
+                    """Get request count per minute from CloudWatch"""
+                    try:
+                        end_time = datetime.utcnow()
+                        start_time = end_time - timedelta(minutes=5)
+                        
+                        response = self.cloudwatch.get_metric_statistics(
+                            Namespace='AWS/ApplicationELB',
+                            MetricName='RequestCount',
+                            Dimensions=[
+                                {
+                                    'Name': 'LoadBalancer',
+                                    'Value': '${ApplicationLoadBalancer}'
+                                }
+                            ],
+                            StartTime=start_time,
+                            EndTime=end_time,
+                            Period=300,  # 5 minutes
+                            Statistics=['Sum']
+                        )
+                        
+                        if response['Datapoints']:
+                            # Calculate requests per minute
+                            total_requests = sum(point['Sum'] for point in response['Datapoints'])
+                            requests_per_minute = total_requests / len(response['Datapoints'])
+                            return requests_per_minute
+                        return 0
+                    except Exception as e:
+                        logger.error(f"Error getting request count: {e}")
+                        return 0
+                
+                def get_current_capacity(self):
+                    """Get current desired capacity of Auto Scaling Group"""
+                    try:
+                        response = self.autoscaling.describe_auto_scaling_groups(
+                            AutoScalingGroupNames=[self.asg_name]
+                        )
+                        if response['AutoScalingGroups']:
+                            return response['AutoScalingGroups'][0]['DesiredCapacity']
+                        return 0
+                    except Exception as e:
+                        logger.error(f"Error getting current capacity: {e}")
+                        return 0
+                
+                def scale_up(self):
+                    """Scale up by 1 instance"""
+                    try:
+                        current_capacity = self.get_current_capacity()
+                        if current_capacity < self.max_capacity:
+                            new_capacity = current_capacity + 1
+                            self.autoscaling.set_desired_capacity(
+                                AutoScalingGroupName=self.asg_name,
+                                DesiredCapacity=new_capacity
+                            )
+                            logger.info(f"Scaling UP: {current_capacity} -> {new_capacity}")
+                            return True
+                        else:
+                            logger.info(f"Already at max capacity ({self.max_capacity})")
+                            return False
+                    except Exception as e:
+                        logger.error(f"Error scaling up: {e}")
+                        return False
+                
+                def scale_down(self):
+                    """Scale down by 1 instance"""
+                    try:
+                        current_capacity = self.get_current_capacity()
+                        if current_capacity > self.min_capacity:
+                            new_capacity = current_capacity - 1
+                            self.autoscaling.set_desired_capacity(
+                                AutoScalingGroupName=self.asg_name,
+                                DesiredCapacity=new_capacity
+                            )
+                            logger.info(f"Scaling DOWN: {current_capacity} -> {new_capacity}")
+                            return True
+                        else:
+                            logger.info(f"Already at min capacity ({self.min_capacity})")
+                            return False
+                    except Exception as e:
+                        logger.error(f"Error scaling down: {e}")
+                        return False
+                
+                def run(self):
+                    """Main monitoring loop"""
+                    logger.info("Starting AutoScaling Agent...")
+                    logger.info(f"ASG: {self.asg_name}")
+                    logger.info(f"Scale up threshold: {self.scale_up_threshold} req/min")
+                    logger.info(f"Scale down threshold: {self.scale_down_threshold} req/min")
+                    
+                    while True:
+                        try:
+                            requests_per_minute = self.get_request_count()
+                            current_capacity = self.get_current_capacity()
+                            
+                            logger.info(f"Current: {requests_per_minute:.1f} req/min, Capacity: {current_capacity}")
+                            
+                            if requests_per_minute > self.scale_up_threshold:
+                                logger.info(f"High traffic detected: {requests_per_minute:.1f} req/min")
+                                self.scale_up()
+                            elif requests_per_minute < self.scale_down_threshold:
+                                logger.info(f"Low traffic detected: {requests_per_minute:.1f} req/min")
+                                self.scale_down()
+                            else:
+                                logger.info("Traffic within normal range, no scaling needed")
+                            
+                            time.sleep(60)  # Check every minute
+                            
+                        except KeyboardInterrupt:
+                            logger.info("Agent stopped by user")
+                            break
+                        except Exception as e:
+                            logger.error(f"Unexpected error: {e}")
+                            time.sleep(60)
+            
+            if __name__ == "__main__":
+                agent = AutoScalingAgent()
+                agent.run()
+            EOF
+            
+            # Make agent.py executable and start it
+            chmod +x /home/ec2-user/agent.py
+            chown ec2-user:ec2-user /home/ec2-user/agent.py
+            
+            # Start agent in background
+            sudo -u ec2-user nohup /home/ec2-user/agent.py > /home/ec2-user/agent.out 2>&1 &
+            
+            # Create a simple web server for health checks
+            cat > /home/ec2-user/simple_server.py << 'EOF'
+            #!/usr/bin/env python3
+            import http.server
+            import socketserver
+            import os
+            
+            PORT = 80
+            
+            class MyHandler(http.server.SimpleHTTPRequestHandler):
+                def do_GET(self):
+                    self.send_response(200)
+                    self.send_header('Content-type', 'text/html')
+                    self.end_headers()
+                    message = f"<h1>AutoScaling Demo Instance</h1><p>Instance ID: {os.environ.get('INSTANCE_ID', 'Unknown')}</p><p>Time: {__import__('datetime').datetime.now()}</p>"
+                    self.wfile.write(bytes(message, "utf8"))
+            
+            with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
+                httpd.serve_forever()
+            EOF
+            
+            chmod +x /home/ec2-user/simple_server.py
+            chown ec2-user:ec2-user /home/ec2-user/simple_server.py
+            
+            # Start web server
+            sudo -u ec2-user nohup /home/ec2-user/simple_server.py > /home/ec2-user/server.out 2>&1 &
+            
+            # Install and start CloudWatch agent
+            yum install -y amazon-cloudwatch-agent
+            /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a start
+
+  # Auto Scaling Group
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub '${AWS::StackName}-asg'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      MinSize: 1
+      MaxSize: 4
+      DesiredCapacity: 1
+      VPCZoneIdentifier: !Ref PublicSubnets
+      TargetGroupARNs:
+        - !Ref TargetGroup
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-instance'
+          PropagateAtLaunch: true
+
+Outputs:
+  ApplicationLoadBalancerDNS:
+    Description: DNS name of the Application Load Balancer
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub '${AWS::StackName}-ALB-DNS'
+  
+  ApplicationLoadBalancerURL:
+    Description: URL of the Application Load Balancer
+    Value: !Sub 'http://${ApplicationLoadBalancer.DNSName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-ALB-URL'
+  
+  AutoScalingGroupName:
+    Description: Name of the Auto Scaling Group
+    Value: !Ref AutoScalingGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-ASG-Name'
+  
+  TargetGroupARN:
+    Description: ARN of the Target Group
+    Value: !Ref TargetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-TG-ARN'
