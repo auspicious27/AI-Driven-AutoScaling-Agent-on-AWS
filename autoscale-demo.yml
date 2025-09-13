@@ -325,8 +325,8 @@ Resources:
             chmod +x /home/ec2-user/agent.py
             chown ec2-user:ec2-user /home/ec2-user/agent.py
             
-            # Start agent in background
-            sudo -u ec2-user nohup /home/ec2-user/agent.py > /home/ec2-user/agent.out 2>&1 &
+            # Start agent in background with region
+            sudo -u ec2-user bash -c 'AWS_DEFAULT_REGION=${AWS::Region} nohup /home/ec2-user/agent.py --asg-name ${AWS::StackName}-asg --alb-arn ${ApplicationLoadBalancer} > /home/ec2-user/agent.out 2>&1 &'
             
             # Create a simple web server for health checks
             cat > /home/ec2-user/simple_server.py << 'EOF'
@@ -352,8 +352,8 @@ Resources:
             chmod +x /home/ec2-user/simple_server.py
             chown ec2-user:ec2-user /home/ec2-user/simple_server.py
             
-            # Start web server
-            sudo -u ec2-user nohup /home/ec2-user/simple_server.py > /home/ec2-user/server.out 2>&1 &
+            # Start web server with sudo (port 80 requires root)
+            sudo nohup /home/ec2-user/simple_server.py > /home/ec2-user/server.out 2>&1 &
             
             # Install and start CloudWatch agent
             yum install -y amazon-cloudwatch-agent

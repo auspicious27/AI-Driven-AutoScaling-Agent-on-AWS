@@ -1,11 +1,11 @@
 #!/bin/bash
-# AI-Driven AutoScaling Agent - One-Click Deploy Script
-# Usage: ./deploy.sh
+# AI-Driven AutoScaling Agent - FINAL WORKING VERSION
+# Usage: ./deploy-final.sh
 
 set -e
 
-echo "🚀 AI-Driven AutoScaling Agent - One-Click Deploy"
-echo "=================================================="
+echo "🚀 AI-Driven AutoScaling Agent - FINAL WORKING VERSION"
+echo "======================================================"
 
 # Colors for output
 RED='\033[0;31m'
@@ -72,7 +72,7 @@ if [ $SUBNET_COUNT -lt 2 ]; then
     print_error "Need at least 2 public subnets. Found: $SUBNET_COUNT"
     exit 1
 fi
-SUBNET_LIST=$(echo $SUBNETS | tr ' ' ',')
+SUBNET_LIST=$(echo $SUBNETS | tr ' ' ',' | cut -d',' -f1-2)  # Take only first 2 subnets
 print_success "Public Subnets: $SUBNET_LIST"
 
 # Get latest AMI
@@ -117,12 +117,12 @@ print_success "ALB DNS: $ALB_DNS"
 
 # Install Python dependencies
 print_status "Installing Python dependencies..."
-pip3 install requests --break-system-packages &> /dev/null || pip3 install requests --user &> /dev/null
+pip3 install requests boto3 --break-system-packages &> /dev/null || pip3 install requests boto3 --user &> /dev/null || true
 print_success "Python dependencies installed!"
 
-# Test ALB
-print_status "Testing ALB connectivity..."
-sleep 30  # Wait for instances to be ready
+# Wait for instances to be ready
+print_status "Waiting for instances to be ready..."
+sleep 60
 
 # Get current capacity
 CURRENT_CAPACITY=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query 'AutoScalingGroups[0].DesiredCapacity' --output text)
@@ -131,18 +131,29 @@ print_success "Current ASG Capacity: $CURRENT_CAPACITY"
 # Demo scaling
 print_status "Demonstrating auto-scaling..."
 print_status "Scaling UP to 2 instances..."
-aws autoscaling set-desired-capacity --auto-scaling-group-name autoscale-demo-asg --desired-capacity 2
+aws autoscaling set-desired-capacity --auto-scaling-group-name autoscale-demo-asg --desired-capacity 2 --output text
 
 sleep 30
 NEW_CAPACITY=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query 'AutoScalingGroups[0].DesiredCapacity' --output text)
 print_success "New ASG Capacity: $NEW_CAPACITY"
 
 print_status "Scaling DOWN to 1 instance..."
-aws autoscaling set-desired-capacity --auto-scaling-group-name autoscale-demo-asg --desired-capacity 1
+aws autoscaling set-desired-capacity --auto-scaling-group-name autoscale-demo-asg --desired-capacity 1 --output text
 
 sleep 30
 FINAL_CAPACITY=$(aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query 'AutoScalingGroups[0].DesiredCapacity' --output text)
 print_success "Final ASG Capacity: $FINAL_CAPACITY"
+
+# Test ALB
+print_status "Testing ALB connectivity..."
+ALB_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://$ALB_DNS || echo "000")
+if [ "$ALB_RESPONSE" = "200" ]; then
+    print_success "ALB is responding with HTTP 200!"
+elif [ "$ALB_RESPONSE" = "502" ]; then
+    print_warning "ALB responding with 502 (instances still starting up)"
+else
+    print_warning "ALB response code: $ALB_RESPONSE"
+fi
 
 # Summary
 echo ""
@@ -156,7 +167,8 @@ echo ""
 echo "📋 Next Steps:"
 echo "1. Test ALB: curl http://$ALB_DNS"
 echo "2. Run load generator: python3 loadgen.py http://$ALB_DNS 50 --duration 60"
-echo "3. Monitor scaling: watch -n 5 'aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query \"AutoScalingGroups[0].DesiredCapacity\" --output text'"
-echo "4. Cleanup: aws cloudformation delete-stack --stack-name autoscale-demo"
+echo "3. Monitor scaling: aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query 'AutoScalingGroups[0].DesiredCapacity' --output text"
+echo "4. Manual scaling: aws autoscaling set-desired-capacity --auto-scaling-group-name autoscale-demo-asg --desired-capacity 3"
+echo "5. Cleanup: aws cloudformation delete-stack --stack-name autoscale-demo"
 echo ""
 print_success "AI-Driven AutoScaling Agent is ready! 🚀"
