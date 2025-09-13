@@ -47,7 +47,7 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 # Check AWS credentials
-if ! aws sts get-caller-identity &> /dev/null; then
+if ! aws sts get-caller-identity --output text &> /dev/null; then
     print_error "AWS credentials not configured. Please run 'aws configure' first."
     exit 1
 fi
@@ -83,8 +83,8 @@ print_success "AMI ID: $AMI_ID"
 KEY_NAME="autoscale-demo-key"
 if ! aws ec2 describe-key-pairs --key-names $KEY_NAME &> /dev/null; then
     print_status "Creating key pair: $KEY_NAME"
-    aws ec2 create-key-pair --key-name $KEY_NAME --query 'KeyMaterial' --output text > ${KEY_NAME}.pem
-    chmod 400 ${KEY_NAME}.pem
+    aws ec2 create-key-pair --key-name $KEY_NAME --query 'KeyMaterial' --output text > ${KEY_NAME}.pem 2>/dev/null
+    chmod 400 ${KEY_NAME}.pem 2>/dev/null
     print_success "Key pair created: ${KEY_NAME}.pem"
 else
     print_success "Key pair already exists: $KEY_NAME"
