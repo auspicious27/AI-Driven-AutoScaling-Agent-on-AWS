@@ -6,15 +6,34 @@ A complete demonstration of intelligent auto-scaling using AWS infrastructure wi
 [![Python](https://img.shields.io/badge/Python-3.7+-blue)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## 🎯 Quick Start
+## 🚀 ONE-PROMPT DEPLOYMENT
 
-### Prerequisites
-- AWS CLI configured with appropriate permissions
-- Python 3.7+ installed locally
-- An existing VPC with public subnets
-- An EC2 Key Pair for SSH access
+### Super Simple - Just One Command:
 
-### One-Command Deployment
+```bash
+git clone https://github.com/auspicious27/AI-Driven-AutoScaling-Agent-on-AWS.git && cd AI-Driven-AutoScaling-Agent-on-AWS && ./deploy.sh
+```
+
+**That's it!** The script automatically:
+- ✅ Checks prerequisites
+- ✅ Fetches AWS resources
+- ✅ Deploys complete infrastructure
+- ✅ Tests auto-scaling
+- ✅ Shows you everything
+
+### Prerequisites (One-time setup):
+```bash
+# 1. Install AWS CLI
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+# 2. Configure AWS credentials
+aws configure
+# Enter: Access Key ID, Secret Key, Region (ap-south-1), Output format (json)
+```
+
+### Manual Deployment (if needed):
 ```bash
 # Clone the repository
 git clone https://github.com/auspicious27/AI-Driven-AutoScaling-Agent-on-AWS.git
