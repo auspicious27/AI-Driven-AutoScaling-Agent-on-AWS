@@ -71,9 +71,9 @@ aws cloudformation delete-stack --stack-name autoscale-demo
 - **`README-MANUAL.md`** - Manual deployment guide
 - **`README-CLEAN.md`** - Clean deployment guide
 
-## 🤖 **Gen AI Project - AI Assistant Prompts Used**
+## 🤖 **Gen AI Project - Gemini AI Assistant Used**
 
-This project was created using **Generative AI** assistant prompts for:
+This project was created using **Google Gemini AI** assistant prompts for:
 
 - **Infrastructure Design** - AWS CloudFormation template creation
 - **Code Generation** - Python scripts for auto-scaling agent and load generator
@@ -81,47 +81,66 @@ This project was created using **Generative AI** assistant prompts for:
 - **Automation** - Shell scripts for deployment and installation
 - **Troubleshooting** - Error resolution and debugging
 
-**Gen AI Prompts Used:**
+**Gemini AI Prompts Used:**
 
 1. **"Create a complete demo project named AI-Driven AutoScaling Agent on AWS"**
-   - **Usage:** Initial project creation
+   - **Gemini Usage:** Initial project creation with AWS infrastructure
    - **Generated:** CloudFormation template, Python scripts, deployment scripts
+   - **AI Model:** Google Gemini Pro
 
 2. **"Add all required files and libraries"**
-   - **Usage:** Dependencies and requirements
+   - **Gemini Usage:** Dependencies and requirements management
    - **Generated:** requirements.txt, install.sh, system dependencies
+   - **AI Model:** Google Gemini Pro
 
 3. **"Create comprehensive documentation explaining the code in simple English"**
-   - **Usage:** Documentation creation
+   - **Gemini Usage:** Documentation creation and code explanation
    - **Generated:** DOCUMENTATION.md, DOCUMENTATION.pdf, DOCUMENTATION.html
+   - **AI Model:** Google Gemini Pro
 
 4. **"Make it simple with one prompt deployment"**
-   - **Usage:** Simplification and automation
+   - **Gemini Usage:** Simplification and automation
    - **Generated:** deploy-perfect.sh, one-command deployment
+   - **AI Model:** Google Gemini Pro
 
 5. **"Fix all code and provide final working version"**
-   - **Usage:** Error resolution and finalization
+   - **Gemini Usage:** Error resolution and code finalization
    - **Generated:** Fixed CloudFormation template, corrected Python scripts
+   - **AI Model:** Google Gemini Pro
 
 6. **"okie abb mai isko execute kaise kar sakta"**
-   - **Usage:** Execution guidance
+   - **Gemini Usage:** Execution guidance in Hindi/English
    - **Generated:** Step-by-step deployment instructions
+   - **AI Model:** Google Gemini Pro
 
 7. **"wait mujhai issmai new crenndatial add karna haii so easiky run hoo jaye"**
-   - **Usage:** AWS credentials setup
+   - **Gemini Usage:** AWS credentials setup assistance
    - **Generated:** AWS configuration guides and scripts
+   - **AI Model:** Google Gemini Pro
 
 8. **"okie so plz run this project soo i am show the outputs"**
-   - **Usage:** Project execution and testing
+   - **Gemini Usage:** Project execution and testing guidance
    - **Generated:** Testing commands and output verification
+   - **AI Model:** Google Gemini Pro
 
 9. **"okie so plz guide me mai isko kaise use karsakta huu or kisi koo batana hoo toh kaise batai gaa"**
-   - **Usage:** Usage guidance and presentation
+   - **Gemini Usage:** Usage guidance and presentation materials
    - **Generated:** Workshop guides and presentation materials
+   - **AI Model:** Google Gemini Pro
 
 10. **"okie so plz remove all extra file"**
-    - **Usage:** Project cleanup
+    - **Gemini Usage:** Project cleanup and optimization
     - **Generated:** Cleaned project structure, removed unused files
+    - **AI Model:** Google Gemini Pro
+
+**Gemini AI Capabilities Demonstrated:**
+- ✅ **Multi-language Support** - Hindi and English prompts
+- ✅ **Code Generation** - Complete Python and CloudFormation code
+- ✅ **Infrastructure Design** - AWS architecture and deployment
+- ✅ **Documentation Creation** - Comprehensive guides and PDFs
+- ✅ **Error Resolution** - Debugging and fixing issues
+- ✅ **Automation Scripts** - Shell scripts for deployment
+- ✅ **Project Management** - Complete project lifecycle
 
 **This is a Gen AI Project demonstrating:**
 - ✅ **AI-Assisted Development** - Complete project created with AI
@@ -130,7 +149,7 @@ This project was created using **Generative AI** assistant prompts for:
 - ✅ **Intelligent Scaling** - AI-driven auto-scaling based on metrics
 - ✅ **Complete Documentation** - AI-generated comprehensive guides
 
-## 🎉 **Ready to Deploy!**
+## 🎉 *Ready to Deploy!*
 
 **One command to rule them all:**
 ```bash
