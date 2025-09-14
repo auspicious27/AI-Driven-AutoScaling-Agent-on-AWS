@@ -1,76 +1,6 @@
 # AI-Driven AutoScaling Agent on AWS
 # ===================================
 
-## 🚀 **One Command Deployment**
-
-```bash
-git clone https://github.com/auspicious27/AI-Driven-AutoScaling-Agent-on-AWS.git && cd AI-Driven-AutoScaling-Agent-on-AWS && chmod +x install.sh deploy-perfect.sh && ./install.sh && ./deploy-perfect.sh
-```
-
-## 📋 **Quick Setup**
-
-### **Step 1: Install Prerequisites**
-```bash
-# Install AWS CLI
-brew install awscli  # macOS
-sudo apt-get install awscli  # Linux
-
-# Install Python dependencies
-pip3 install boto3 requests urllib3
-
-# Install system tools
-brew install watch weasyprint  # macOS
-sudo apt-get install procps && pip3 install weasyprint  # Linux
-```
-
-### **Step 2: Configure AWS**
-```bash
-aws configure
-# Enter your AWS credentials and region (e.g., ap-south-1)
-```
-
-### **Step 3: Deploy Infrastructure**
-```bash
-./deploy-perfect.sh
-```
-
-## 🎯 **What This Does**
-
-- **Creates AWS Infrastructure** - VPC, ALB, Auto Scaling Group
-- **Deploys Auto-Scaling Agent** - Monitors ALB request metrics
-- **Scales Automatically** - Up when requests > 120/min, Down when < 60/min
-- **Load Testing** - Generates traffic to test scaling
-
-## 📊 **Monitor Auto-Scaling**
-
-```bash
-# Check current capacity
-aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query 'AutoScalingGroups[0].DesiredCapacity' --output text
-
-# Watch real-time scaling
-watch -n 5 'aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query "AutoScalingGroups[0].DesiredCapacity" --output text'
-```
-
-## 🧪 **Test Load Generation**
-
-```bash
-# Get ALB DNS from deployment output
-python3 loadgen.py http://YOUR-ALB-DNS.ap-south-1.elb.amazonaws.com 50 --duration 60
-```
-
-## 🧹 **Cleanup**
-
-```bash
-aws cloudformation delete-stack --stack-name autoscale-demo
-```
-
-## 📚 **Documentation**
-
-- **`DOCUMENTATION.pdf`** - Complete project documentation
-- **`SETUP-GUIDE.md`** - Detailed setup guide
-- **`README-MANUAL.md`** - Manual deployment guide
-- **`README-CLEAN.md`** - Clean deployment guide
-
 ## 🤖 **Gen AI Project - Gemini AI Assistant Used**
 
 This project was created using **Google Gemini AI** assistant prompts for:
@@ -142,18 +72,201 @@ This project was created using **Google Gemini AI** assistant prompts for:
 - ✅ **Automation Scripts** - Shell scripts for deployment
 - ✅ **Project Management** - Complete project lifecycle
 
-**This is a Gen AI Project demonstrating:**
-- ✅ **AI-Assisted Development** - Complete project created with AI
-- ✅ **Infrastructure as Code** - AWS resources defined programmatically
-- ✅ **Automated Deployment** - One-command setup and deployment
-- ✅ **Intelligent Scaling** - AI-driven auto-scaling based on metrics
-- ✅ **Complete Documentation** - AI-generated comprehensive guides
+## 🚀 **One Command Deployment**
 
-## 🎉 *Ready to Deploy!*
+```bash
+git clone https://github.com/auspicious27/AI-Driven-AutoScaling-Agent-on-AWS.git && cd AI-Driven-AutoScaling-Agent-on-AWS && chmod +x deploy-perfect.sh && ./deploy-perfect.sh
+```
+
+## 📋 **Quick Setup**
+
+### **Step 1: Install Prerequisites**
+```bash
+# Install AWS CLI
+brew install awscli  # macOS
+sudo apt-get install awscli  # Linux
+
+# Install Python dependencies
+pip3 install boto3 requests urllib3
+
+# Install system tools
+brew install watch weasyprint  # macOS
+sudo apt-get install procps && pip3 install weasyprint  # Linux
+```
+
+### **Step 2: Configure AWS**
+```bash
+aws configure
+# Enter your AWS credentials and region (e.g., ap-south-1)
+```
+
+### **Step 3: Deploy Infrastructure**
+```bash
+./deploy-perfect.sh
+```
+
+## 🎯 **What This Does**
+
+- **Creates AWS Infrastructure** - VPC, ALB, Auto Scaling Group
+- **Deploys Auto-Scaling Agent** - Monitors ALB request metrics
+- **Scales Automatically** - Up when requests > 120/min, Down when < 60/min
+- **Load Testing** - Generates traffic to test scaling
+
+## 📊 **Monitor Auto-Scaling**
+
+```bash
+# Check current capacity
+aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query 'AutoScalingGroups[0].DesiredCapacity' --output text
+
+# Watch real-time scaling
+watch -n 5 'aws autoscaling describe-auto-scaling-groups --auto-scaling-group-names autoscale-demo-asg --query "AutoScalingGroups[0].DesiredCapacity" --output text'
+```
+
+## 🧪 **Test Load Generation**
+
+```bash
+# Get ALB DNS from deployment output
+python3 loadgen.py http://YOUR-ALB-DNS.ap-south-1.elb.amazonaws.com 50 --duration 60
+```
+
+## 🧹 **Cleanup**
+
+```bash
+aws cloudformation delete-stack --stack-name autoscale-demo
+```
+
+## 📚 **Project Files**
+
+- **`autoscale-demo.yml`** - CloudFormation template for AWS infrastructure
+- **`agent.py`** - Auto-scaling agent script (monitors ALB metrics)
+- **`loadgen.py`** - Load generator script (simulates traffic)
+- **`deploy-perfect.sh`** - Automated deployment script
+- **`requirements.txt`** - Python dependencies
+- **`install.sh`** - Automated installation script
+
+## 🔧 **Manual Installation Steps**
+
+### **Step 1: Install AWS CLI**
+```bash
+# Check if AWS CLI is installed
+aws --version
+
+# If not installed, install it:
+# macOS
+brew install awscli
+
+# Linux
+sudo apt-get install awscli
+```
+
+### **Step 2: Configure AWS Credentials**
+```bash
+aws configure
+# Enter:
+# - AWS Access Key ID: [Your Access Key]
+# - AWS Secret Access Key: [Your Secret Key]
+# - Default region name: ap-south-1
+# - Default output format: json
+```
+
+### **Step 3: Install Python Dependencies**
+```bash
+# Install Python 3.8+ if not already installed
+python3 --version
+
+# Install required packages
+pip3 install boto3 requests urllib3
+
+# Or install from requirements file
+pip3 install -r requirements.txt
+```
+
+### **Step 4: Install System Tools**
+```bash
+# macOS
+brew install watch weasyprint
+
+# Linux/Ubuntu
+sudo apt-get install procps
+pip3 install weasyprint
+```
+
+### **Step 5: Clone Repository**
+```bash
+git clone https://github.com/auspicious27/AI-Driven-AutoScaling-Agent-on-AWS.git
+cd AI-Driven-AutoScaling-Agent-on-AWS
+```
+
+### **Step 6: Make Scripts Executable**
+```bash
+chmod +x deploy-perfect.sh
+chmod +x agent.py
+chmod +x loadgen.py
+```
+
+## 🎯 **Deployment Options**
+
+### **Option 1: Automated Deployment (Recommended)**
+```bash
+./deploy-perfect.sh
+```
+
+### **Option 2: Prompt-Based Deployment**
+```bash
+./prompt-launcher.sh
+```
+
+## 🔍 **Verification**
+
+### **Check AWS CLI**
+```bash
+aws sts get-caller-identity
+```
+
+### **Check Python Dependencies**
+```bash
+python3 -c "import boto3, requests; print('All dependencies installed!')"
+```
+
+### **Check System Tools**
+```bash
+watch --version
+weasyprint --version
+```
+
+## 🚨 **Troubleshooting**
+
+### **Common Issues:**
+
+1. **AWS Credentials Not Found**
+   ```bash
+   aws configure
+   ```
+
+2. **Python Module Not Found**
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+3. **Permission Denied**
+   ```bash
+   chmod +x deploy-perfect.sh
+   ```
+
+4. **Command Not Found (watch)**
+   ```bash
+   # macOS
+   brew install watch
+   
+   # Linux
+   sudo apt-get install procps
+   ```
+
+## 🎉 **Ready to Deploy!**
 
 **One command to rule them all:**
 ```bash
-git clone https://github.com/auspicious27/AI-Driven-AutoScaling-Agent-on-AWS.git && cd AI-Driven-AutoScaling-Agent-on-AWS && chmod +x install.sh deploy-perfect.sh && ./install.sh && ./deploy-perfect.sh
+git clone https://github.com/auspicious27/AI-Driven-AutoScaling-Agent-on-AWS.git && cd AI-Driven-AutoScaling-Agent-on-AWS && chmod +x deploy-perfect.sh && ./deploy-perfect.sh
 ```
 
 **Perfect for workshops, demos, and learning AWS auto-scaling!** 🚀
