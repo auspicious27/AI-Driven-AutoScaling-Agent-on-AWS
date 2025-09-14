@@ -71,6 +71,23 @@ aws cloudformation delete-stack --stack-name autoscale-demo
 - **`README-MANUAL.md`** - Manual deployment guide
 - **`README-CLEAN.md`** - Clean deployment guide
 
+## 🤖 **AI Assistant Prompts Used**
+
+This project was created using AI assistant prompts for:
+
+- **Infrastructure Design** - AWS CloudFormation template creation
+- **Code Generation** - Python scripts for auto-scaling agent and load generator
+- **Documentation** - Complete project documentation and guides
+- **Automation** - Shell scripts for deployment and installation
+- **Troubleshooting** - Error resolution and debugging
+
+**AI Prompts Used:**
+- "Create a complete demo project named AI-Driven AutoScaling Agent on AWS"
+- "Add all required files and libraries"
+- "Create comprehensive documentation explaining the code in simple English"
+- "Make it simple with one prompt deployment"
+- "Fix all code and provide final working version"
+
 ## 🎉 **Ready to Deploy!**
 
 **One command to rule them all:**
